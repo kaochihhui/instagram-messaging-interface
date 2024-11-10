@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { loginToInstagram, sendInstagramMessage } from '@/lib/agentql'
 import LoginForm from './login-form'
 import MessageForm from './message-form'
 import JsonInputForm from './json-input'
@@ -9,14 +10,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
-// Mock function for agentql integration
-async function agentqlAction(action: string, params: any) {
-  // This is where you would integrate with agentql
-  console.log(`AgentQL action: ${action}`, params)
-  // For now, we'll just return a mock response
-  return { success: true, message: 'Action completed successfully' }
-}
-
 export default function InstagramMessaging() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [useJsonInput, setUseJsonInput] = useState(false)
@@ -24,12 +17,12 @@ export default function InstagramMessaging() {
 
   const handleLogin = async (username: string, password: string) => {
     try {
-      const result = await agentqlAction('login', { username, password })
+      const result = await loginToInstagram(username, password)
       if (result.success) {
         setIsLoggedIn(true)
-        setResponse(result)
+        setResponse({ success: true, message: 'Logged in successfully' })
       } else {
-        setResponse(result)
+        setResponse({ success: false, message: result.error || 'Login failed' })
       }
     } catch (error) {
       setResponse({ success: false, message: 'An error occurred during login' })
@@ -38,8 +31,8 @@ export default function InstagramMessaging() {
 
   const handleSendMessage = async (recipient: string, message: string) => {
     try {
-      const result = await agentqlAction('sendMessage', { recipient, message })
-      setResponse(result)
+      const result = await sendInstagramMessage(recipient, message)
+      setResponse({ success: true, message: 'Message sent successfully' })
     } catch (error) {
       setResponse({ success: false, message: 'An error occurred while sending the message' })
     }
@@ -47,13 +40,13 @@ export default function InstagramMessaging() {
 
   const handleJsonSubmit = async (data: { username: string; password: string; recipient: string; message: string }) => {
     try {
-      const loginResult = await agentqlAction('login', { username: data.username, password: data.password })
+      const loginResult = await loginToInstagram(data.username, data.password)
       if (loginResult.success) {
         setIsLoggedIn(true)
-        const messageResult = await agentqlAction('sendMessage', { recipient: data.recipient, message: data.message })
-        setResponse(messageResult)
+        const messageResult = await sendInstagramMessage(data.recipient, data.message)
+        setResponse({ success: true, message: 'Logged in and sent message successfully' })
       } else {
-        setResponse(loginResult)
+        setResponse({ success: false, message: loginResult.error || 'Login failed' })
       }
     } catch (error) {
       setResponse({ success: false, message: 'An error occurred while processing JSON input' })
