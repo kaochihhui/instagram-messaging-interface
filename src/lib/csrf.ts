@@ -1,17 +1,21 @@
-import { NextResponse } from 'next/server'
-import { getIronSession } from 'iron-session/edge'
+import { NextRequest, NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
 import { randomBytes } from 'crypto'
 
-const sessionOptions = {
+export const sessionOptions = {
+  cookieName: "instagram_messaging_session",
   password: process.env.SESSION_PASSWORD as string,
-  cookieName: 'instagram_messaging_session',
   cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === "production",
   },
 }
 
-export async function getCsrfToken(request: Request) {
-  const session = await getIronSession(request, NextResponse.next(), sessionOptions)
+export type SessionData = {
+  csrfToken: string
+}
+
+export async function getCsrfToken(req: NextRequest, res: NextResponse) {
+  const session = await getIronSession<SessionData>(req, res, sessionOptions)
   
   if (!session.csrfToken) {
     session.csrfToken = randomBytes(32).toString('hex')
@@ -21,7 +25,7 @@ export async function getCsrfToken(request: Request) {
   return session.csrfToken
 }
 
-export async function validateCsrfToken(request: Request, token: string) {
-  const session = await getIronSession(request, NextResponse.next(), sessionOptions)
+export async function validateCsrfToken(req: NextRequest, res: NextResponse, token: string) {
+  const session = await getIronSession<SessionData>(req, res, sessionOptions)
   return session.csrfToken === token
 }
