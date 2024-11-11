@@ -92,7 +92,7 @@ export default function InstagramMessaging() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center min-h-screen">
         <Card className="w-[400px]">
           <CardHeader>
             <CardTitle>Instagram Messaging Interface</CardTitle>
@@ -108,10 +108,17 @@ export default function InstagramMessaging() {
               />
               <Label htmlFor="use-json">Use JSON Input</Label>
             </div>
-            {status === 'loading' && <p>Loading...</p>}
-            {status === 'unauthenticated' && !useJsonInput && <LoginForm onLogin={handleLogin} />}
-            {status === 'authenticated' && !useJsonInput && <MessageForm onSendMessage={handleSendMessage} />}
-            {useJsonInput && <JsonInputForm onJsonSubmit={handleJsonSubmit} />}
+            {status === 'loading' ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : (
+              <>
+                {status === 'unauthenticated' && !useJsonInput && <LoginForm onLogin={handleLogin} />}
+                {status === 'authenticated' && !useJsonInput && <MessageForm onSendMessage={handleSendMessage} />}
+                {useJsonInput && <JsonInputForm onJsonSubmit={handleJsonSubmit} />}
+              </>
+            )}
             {response && (
               <Alert className={`mt-4 ${response.success ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
                 <AlertDescription>{response.message}</AlertDescription>
