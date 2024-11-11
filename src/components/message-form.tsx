@@ -2,26 +2,31 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
-type MessageFormData = {
-  recipient: string;
-  message: string;
-}
+const messageSchema = z.object({
+  recipient: z.string().min(1, 'Recipient is required'),
+  message: z.string().min(1, 'Message is required').max(1000, 'Message must be 1000 characters or less'),
+})
 
-export default function MessageForm({ onSend }: { onSend: (recipient: string, message: string) => Promise<void> }) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<MessageFormData>()
+type MessageFormData = z.infer<typeof messageSchema>
+
+export default function MessageForm({ onSendMessage }: { onSendMessage: (recipient: string, message: string) => Promise<void> }) {
   const [error, setError] = useState<string | null>(null)
+  const { register, handleSubmit, formState: { errors } } = useForm<MessageFormData>({
+    resolver: zodResolver(messageSchema)
+  })
 
   const onSubmit = async (data: MessageFormData) => {
     try {
-      await onSend(data.recipient, data.message)
-      reset() // Clear form after successful send
+      await onSendMessage(data.recipient, data.message)
       setError(null)
     } catch (err) {
       setError('Failed to send message. Please try again.')
@@ -29,52 +34,41 @@ export default function MessageForm({ onSend }: { onSend: (recipient: string, me
   }
 
   return (
-    <Card className="w-full max-w-[500px]">
-      <CardHeader>
-        <CardTitle>Send Message</CardTitle>
-        <CardDescription>Send a direct message to an Instagram user</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="recipient">Recipient</Label>
-              <Input 
-                id="recipient"
-                {...register("recipient", { 
-                  required: "Recipient username is required",
-                  pattern: {
-                    value: /^[a-zA-Z0-9._]+$/,
-                    message: "Invalid Instagram username format"
-                  }
-                })}
-              />
-              {errors.recipient && <span className="text-sm text-red-500">{errors.recipient.message}</span>}
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="message">Message</Label>
-              <Textarea 
-                id="message"
-                {...register("message", { 
-                  required: "Message is required",
-                  maxLength: {
-                    value: 1000,
-                    message: "Message cannot exceed 1000 characters"
-                  }
-                })}
-              />
-              {errors.message && <span className="text-sm text-red-500">{errors.message.message}</span>}
-            </div>
+    <Card>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="recipient">Recipient</Label>
+            <Input
+              id="recipient"
+              {...register('recipient')}
+              placeholder="Enter recipient's username"
+            />
+            {errors.recipient && (
+              <p className="text-sm text-red-500">{errors.recipient.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              {...register('message')}
+              placeholder="Type your message here"
+            />
+            {errors.message && (
+              <p className="text-sm text-red-500">{errors.message.message}</p>
+            )}
           </div>
           {error && (
-            <Alert className="mt-4" variant="destructive">
-              <AlertTitle>Error</AlertTitle>
+            <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <Button type="submit" className="w-full mt-4">Send Message</Button>
-        </form>
-      </CardContent>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" className="w-full">Send Message</Button>
+        </CardFooter>
+      </form>
     </Card>
   )
 }
